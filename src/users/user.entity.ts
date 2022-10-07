@@ -1,6 +1,11 @@
-import { AfterInsert, AfterRemove, AfterUpdate, Column, Entity, PrimaryGeneratedColumn } from "typeorm";
-
-// import { Exclude } from "class-transformer"
+import {
+  AfterInsert,
+  AfterRemove,
+  AfterUpdate,
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 
 @Entity()
 export class User {
@@ -10,22 +15,21 @@ export class User {
   @Column()
   email: string;
 
-  // @Exclude() //nest recommended serialize
   @Column()
   password: string;
 
   @AfterInsert()
   logInsert() {
-    console.log("inserted User with id ", this.id);
-  }
-
-  @AfterRemove()
-  logRemove() {
-    console.log("removed User with id ", this.id);
+    console.log('Inserted User with id', this.id);
   }
 
   @AfterUpdate()
   logUpdate() {
-    console.log("removed User with id ", this.id);
+    console.log('Updated User with id', this.id);
+  }
+
+  @AfterRemove()
+  logRemove() {
+    console.log('Removed User with id', this.id);
   }
 }
