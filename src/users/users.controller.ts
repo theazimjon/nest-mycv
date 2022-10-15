@@ -1,68 +1,80 @@
-import { Body, Controller, Post, Get, Injectable, Param, Query, Delete, Patch, NotFoundException, UseInterceptors, ClassSerializerInterceptor, Session } from '@nestjs/common';
-// import { Serialize } from '../interceptors/serialize.interceptor';
-import { AuthService } from './auth.service';
-import { CreateuserDto } from './dtos/create-user.dto';
+import {
+  Body,
+  Controller,
+  Post,
+  Get,
+  Patch,
+  Delete,
+  Param,
+  Query,
+  NotFoundException,
+  Session,
+  UseGuards,
+} from '@nestjs/common';
+import { CreateUserDto } from './dtos/create-user.dto';
 import { UpdateUserDto } from './dtos/update-user.dto';
-import { UserDto } from './dtos/user.dto';
 import { UsersService } from './users.service';
+import { Serialize } from '../interceptors/serialize.interceptor';
+import { UserDto } from './dtos/user.dto';
+import { AuthService } from './auth.service';
+import { CurrentUser } from './decorators/current-user.decorator';
+import { User } from './user.entity';
+import { AuthGuard } from '../guards/auth.guard';
 
-@Injectable()
 @Controller('auth')
-// @Serialize(UserDto) //custom interceptor
+@Serialize(UserDto)
 export class UsersController {
   constructor(
     private usersService: UsersService,
-    private authService: AuthService
+    private authService: AuthService,
   ) {}
 
-  @Post("signup")
-  async signup(@Body() body: CreateuserDto, @Session() session: any){
-    const user = await this.authService.signup(body.email, body.password)
-    session.UserId = user.id
-    return user
+  @Get('/whoami')
+  @UseGuards(AuthGuard)
+  whoAmI(@CurrentUser() user: User) {
+    return user;
   }
 
-  @Post("signin")
-  async signin(@Body() body: CreateuserDto, @Session() session: any){
-    const user  = await this.authService.signin(body.email, body.password)
-    session.UserId = user.id
-    return user
+  @Post('/signout')
+  signOut(@Session() session: any) {
+    session.userId = null;
   }
 
-  @Get("/whoami")
-  whoAmI(@Session() session: any){
-    return this.usersService.findOne(session.userId)
+  @Post('/signup')
+  async createUser(@Body() body: CreateUserDto, @Session() session: any) {
+    const user = await this.authService.signup(body.email, body.password);
+    session.userId = user.id;
+    return user;
   }
 
-  @Post("/signout")
-  signout(@Session() session: any){
-    session.userId = null
+  @Post('/signin')
+  async signin(@Body() body: CreateUserDto, @Session() session: any) {
+    const user = await this.authService.signin(body.email, body.password);
+    session.userId = user.id;
+    return user;
   }
 
-  // @UseInterceptors(ClassSerializerInterceptor) // nest recom.
-  // @UseInterceptors(new SerializeInterceptor(UserDto))
-  @Get(":id")
-  async findUser(@Param("id") id: string){4
-    console.log("Handlre is runnning");
-    const user = await this.usersService.findOne(parseInt(id))
-    if(!user)
-      throw new NotFoundException("User not found")
-
-    return user
+  @Get('/:id')
+  async findUser(@Param('id') id: string) {
+    const user = await this.usersService.findOne(parseInt(id));
+    if (!user) {
+      throw new NotFoundException('user not found');
+    }
+    return user;
   }
 
   @Get()
-  findAllUsers(@Query("email") email: string){
-    return this.usersService.find(email)
+  findAllUsers(@Query('email') email: string) {
+    return this.usersService.find(email);
   }
 
-  @Patch(":id")
-  update(@Param("id") id: string, @Body() body: UpdateUserDto){
-    return this.usersService.update(parseInt(id), body)
+  @Delete('/:id')
+  removeUser(@Param('id') id: string) {
+    return this.usersService.remove(parseInt(id));
   }
 
-  @Delete(":id")
-  delete(@Param("id") id: string){
-    return this.usersService.remove(parseInt(id))
+  @Patch('/:id')
+  updateUser(@Param('id') id: string, @Body() body: UpdateUserDto) {
+    return this.usersService.update(parseInt(id), body);
   }
 }
